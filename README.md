@@ -62,7 +62,25 @@ uv run python benchmark_8b.py --only_awq --output_json awq_8b_results.json
 | `--measure_steps` | 10 | Measurement iterations |
 | `--only_base` | - | Benchmark BASE model only |
 | `--only_awq` | - | Benchmark AWQ model only |
+| `--text_only` | - | Skip image benchmarks (text tower only) |
+| `--sweep_batch_sizes` | - | Comma-separated batch sizes to sweep |
 | `--output_json` | - | Save results to JSON file |
+
+### Batch Size Sweep
+
+The sweep mode tests multiple batch sizes to find the optimal throughput for each model under memory constraints. This demonstrates how quantization enables higher throughput by allowing larger batch sizes.
+
+```bash
+# Sweep batch sizes for BASE model
+uv run python benchmark.py --only_base \
+    --sweep_batch_sizes "8,16,32,64,128,256" \
+    --output_json sweep_base.json
+
+# Sweep batch sizes for Quantized model (can use larger batches)
+uv run python benchmark.py --only_awq \
+    --sweep_batch_sizes "8,16,32,64,128,256,512" \
+    --output_json sweep_awq.json
+```
 
 ### Example with Custom Parameters
 
@@ -84,6 +102,7 @@ uv run python benchmark.py \
 
 ## Notes
 
-- AWQ quantization is applied only to the text tower; the vision tower remains in FP16/BF16
+- AutoRound quantization is applied only to the text tower; the vision tower remains in FP16/BF16
 - Run models separately (`--only_base` / `--only_awq`) to avoid GPU memory conflicts
 - Results are saved to JSON for further analysis when using `--output_json`
+- Quantized models use ~60% less memory, enabling larger batch sizes and higher throughput on memory-constrained GPUs

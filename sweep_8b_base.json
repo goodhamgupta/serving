@@ -1,0 +1,82 @@
+{
+  "metadata": {
+    "device": "cuda",
+    "gpu": "NVIDIA A100-SXM4-40GB",
+    "cuda_version": "12.8",
+    "text_samples": 64,
+    "text_batch_size": 8,
+    "image_samples": 16,
+    "image_batch_size": 4,
+    "image_size": 512,
+    "warmup_steps": 2,
+    "measure_steps": 5
+  },
+  "results": {
+    "BASE_text_queries_bs8": {
+      "scenario": "text_queries_bs8",
+      "total_items": 40,
+      "total_time_s": 0.19911328901071101,
+      "throughput_items_per_s": 200.89065977835492,
+      "latency_mean_ms_per_batch": 39.8226578021422,
+      "latency_std_ms_per_batch": 2.933919552018568,
+      "cuda_memory_allocated_MB": 16754.10498046875,
+      "cuda_max_memory_allocated_MB": 16790.56005859375,
+      "cuda_max_memory_reserved_MB": 16816.0
+    },
+    "BASE_text_queries_bs16": {
+      "scenario": "text_queries_bs16",
+      "total_items": 80,
+      "total_time_s": 0.21075469502829947,
+      "throughput_items_per_s": 379.58822217107837,
+      "latency_mean_ms_per_batch": 42.15093900565989,
+      "latency_std_ms_per_batch": 4.016600578262153,
+      "cuda_memory_allocated_MB": 16774.52685546875,
+      "cuda_max_memory_allocated_MB": 16844.68359375,
+      "cuda_max_memory_reserved_MB": 16892.0
+    },
+    "BASE_text_queries_bs32": {
+      "scenario": "text_queries_bs32",
+      "total_items": 160,
+      "total_time_s": 0.28420452498539817,
+      "throughput_items_per_s": 562.9748506228761,
+      "latency_mean_ms_per_batch": 56.84090499707963,
+      "latency_std_ms_per_batch": 2.653242676279005,
+      "cuda_memory_allocated_MB": 16820.38427734375,
+      "cuda_max_memory_allocated_MB": 16964.3291015625,
+      "cuda_max_memory_reserved_MB": 17020.0
+    },
+    "BASE_text_queries_bs64": {
+      "scenario": "text_queries_bs64",
+      "total_items": 320,
+      "total_time_s": 0.5237458189949393,
+      "throughput_items_per_s": 610.9833976604823,
+      "latency_mean_ms_per_batch": 104.74916379898787,
+      "latency_std_ms_per_batch": 5.5183766847099625,
+      "cuda_memory_allocated_MB": 16902.82470703125,
+      "cuda_max_memory_allocated_MB": 17195.95068359375,
+      "cuda_max_memory_reserved_MB": 17322.0
+    },
+    "BASE_text_queries_bs128": {
+      "scenario": "text_queries_bs128",
+      "total_items": 640,
+      "total_time_s": 1.0240308119973633,
+      "throughput_items_per_s": 624.9811944151226,
+      "latency_mean_ms_per_batch": 204.80616239947267,
+      "latency_std_ms_per_batch": 4.044881656862364,
+      "cuda_memory_allocated_MB": 17084.69921875,
+      "cuda_max_memory_allocated_MB": 17682.9501953125,
+      "cuda_max_memory_reserved_MB": 17798.0
+    },
+    "BASE_text_queries_bs256": {
+      "scenario": "text_queries_bs256",
+      "total_items": 1280,
+      "total_time_s": 2.0127713980036788,
+      "throughput_items_per_s": 635.939084423367,
+      "latency_mean_ms_per_batch": 402.55427960073575,
+      "latency_std_ms_per_batch": 5.817632137516544,
+      "cuda_memory_allocated_MB": 17423.7431640625,
+      "cuda_max_memory_allocated_MB": 18604.994140625,
+      "cuda_max_memory_reserved_MB": 18922.0
+    }
+  }
+}

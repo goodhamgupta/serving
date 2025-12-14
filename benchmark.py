@@ -225,6 +225,85 @@ def cleanup_model(model):
         torch.cuda.empty_cache()
 
 
+def sweep_text_batch_sizes(
+    model,
+    processor,
+    batch_sizes: List[int],
+    num_samples: int,
+    warmup_steps: int,
+    measure_steps: int,
+    scenario_prefix: str,
+) -> List[tuple]:
+    """Sweep through batch sizes to find max throughput under memory constraints."""
+    results = []
+    for bs in batch_sizes:
+        print(f"\n[{scenario_prefix}] Trying batch size = {bs}")
+        try:
+            text_batches = prepare_text_batches(
+                processor,
+                num_samples=max(num_samples, bs * 2),
+                batch_size=bs,
+                device=DEVICE,
+            )
+            stats = run_benchmark(
+                model,
+                text_batches,
+                warmup_steps=warmup_steps,
+                measure_steps=measure_steps,
+                scenario_name=f"text_queries_bs{bs}",
+            )
+            print_results(scenario_prefix, stats)
+            results.append((bs, stats))
+            del text_batches
+            gc.collect()
+            torch.cuda.empty_cache()
+        except RuntimeError as e:
+            if "out of memory" in str(e).lower():
+                print(f"[{scenario_prefix}] OOM at batch size = {bs}, stopping sweep.")
+                gc.collect()
+                torch.cuda.empty_cache()
+                break
+            else:
+                raise
+    return results
+
+
+def print_sweep_summary(base_results: List[tuple], awq_results: List[tuple]):
+    """Print comparison of max batch size throughput."""
+    print("\n" + "="*70)
+    print("MAX BATCH SIZE THROUGHPUT COMPARISON")
+    print("="*70)
+    
+    if base_results:
+        base_max_bs, base_max_stats = base_results[-1]
+        print(f"\nBASE Model:")
+        print(f"  Max batch size achieved: {base_max_bs}")
+        print(f"  Throughput at max bs: {base_max_stats['throughput_items_per_s']:.2f} items/s")
+        print(f"  Peak memory: {base_max_stats['cuda_max_memory_allocated_MB']:.1f} MB")
+    
+    if awq_results:
+        awq_max_bs, awq_max_stats = awq_results[-1]
+        print(f"\nQuantized Model:")
+        print(f"  Max batch size achieved: {awq_max_bs}")
+        print(f"  Throughput at max bs: {awq_max_stats['throughput_items_per_s']:.2f} items/s")
+        print(f"  Peak memory: {awq_max_stats['cuda_max_memory_allocated_MB']:.1f} MB")
+    
+    if base_results and awq_results:
+        base_max_bs, base_max_stats = base_results[-1]
+        awq_max_bs, awq_max_stats = awq_results[-1]
+        
+        throughput_ratio = awq_max_stats['throughput_items_per_s'] / base_max_stats['throughput_items_per_s']
+        batch_ratio = awq_max_bs / base_max_bs
+        
+        print(f"\nComparison:")
+        print(f"  Batch size increase: {batch_ratio:.1f}x ({base_max_bs} → {awq_max_bs})")
+        print(f"  Throughput ratio: {throughput_ratio:.2f}x")
+        if throughput_ratio > 1:
+            print(f"  ✅ Quantized model achieves {(throughput_ratio-1)*100:.1f}% higher throughput at max batch size")
+        else:
+            print(f"  Quantized model achieves {throughput_ratio*100:.1f}% of base throughput at max batch size")
+
+
 def print_summary(results: Dict[str, Dict[str, float]]):
     """Print a comparison summary table."""
     print("\n" + "="*70)
@@ -265,8 +344,14 @@ def main():
     parser.add_argument("--only_base", action="store_true", help="Only benchmark base model")
     parser.add_argument("--only_awq", action="store_true", help="Only benchmark AWQ model")
     parser.add_argument("--text_only", action="store_true", help="Only benchmark text (skip images)")
+    parser.add_argument("--sweep_batch_sizes", type=str, default=None,
+                        help="Comma-separated batch sizes to sweep, e.g. '4,8,16,32,64'")
     parser.add_argument("--output_json", type=str, default=None, help="Path to save results as JSON")
     args = parser.parse_args()
+    
+    batch_sizes = None
+    if args.sweep_batch_sizes:
+        batch_sizes = [int(x.strip()) for x in args.sweep_batch_sizes.split(",")]
     
     if not torch.cuda.is_available():
         raise RuntimeError("CUDA is required for this benchmark.")
@@ -276,34 +361,52 @@ def main():
     print(f"CUDA version: {torch.version.cuda}")
     
     all_results = {}
+    base_sweep_results = []
+    awq_sweep_results = []
     
     if not args.only_awq:
         base_model, base_processor = load_base_model()
         
-        print("\nPreparing text batches for BASE model...")
-        text_batches = prepare_text_batches(
-            base_processor,
-            num_samples=args.text_samples,
-            batch_size=args.text_batch_size,
-            device=DEVICE,
-        )
+        if batch_sizes:
+            print("\n" + "="*60)
+            print("BATCH SIZE SWEEP - BASE MODEL")
+            print("="*60)
+            base_sweep_results = sweep_text_batch_sizes(
+                base_model,
+                base_processor,
+                batch_sizes=batch_sizes,
+                num_samples=args.text_samples,
+                warmup_steps=args.warmup_steps,
+                measure_steps=args.measure_steps,
+                scenario_prefix="BASE",
+            )
+            for bs, stats in base_sweep_results:
+                all_results[f"BASE_text_queries_bs{bs}"] = stats
+        else:
+            print("\nPreparing text batches for BASE model...")
+            text_batches = prepare_text_batches(
+                base_processor,
+                num_samples=args.text_samples,
+                batch_size=args.text_batch_size,
+                device=DEVICE,
+            )
+            
+            print("\nRunning text benchmark for BASE model...")
+            base_text_stats = run_benchmark(
+                base_model,
+                text_batches,
+                warmup_steps=args.warmup_steps,
+                measure_steps=args.measure_steps,
+                scenario_name="text_queries",
+            )
+            print_results("BASE", base_text_stats)
+            all_results["BASE_text_queries"] = base_text_stats
+            
+            del text_batches
+            gc.collect()
+            torch.cuda.empty_cache()
         
-        print("\nRunning text benchmark for BASE model...")
-        base_text_stats = run_benchmark(
-            base_model,
-            text_batches,
-            warmup_steps=args.warmup_steps,
-            measure_steps=args.measure_steps,
-            scenario_name="text_queries",
-        )
-        print_results("BASE", base_text_stats)
-        all_results["BASE_text_queries"] = base_text_stats
-        
-        del text_batches
-        gc.collect()
-        torch.cuda.empty_cache()
-        
-        if not args.text_only:
+        if not args.text_only and not batch_sizes:
             print("Preparing image batches for BASE model...")
             image_batches = prepare_image_batches(
                 base_processor,
@@ -336,30 +439,46 @@ def main():
     if not args.only_base:
         awq_model, awq_processor = load_awq_model()
         
-        print("\nPreparing text batches for AWQ model...")
-        text_batches = prepare_text_batches(
-            awq_processor,
-            num_samples=args.text_samples,
-            batch_size=args.text_batch_size,
-            device=DEVICE,
-        )
+        if batch_sizes:
+            print("\n" + "="*60)
+            print("BATCH SIZE SWEEP - QUANTIZED MODEL")
+            print("="*60)
+            awq_sweep_results = sweep_text_batch_sizes(
+                awq_model,
+                awq_processor,
+                batch_sizes=batch_sizes,
+                num_samples=args.text_samples,
+                warmup_steps=args.warmup_steps,
+                measure_steps=args.measure_steps,
+                scenario_prefix="QUANT",
+            )
+            for bs, stats in awq_sweep_results:
+                all_results[f"AWQ_text_queries_bs{bs}"] = stats
+        else:
+            print("\nPreparing text batches for AWQ model...")
+            text_batches = prepare_text_batches(
+                awq_processor,
+                num_samples=args.text_samples,
+                batch_size=args.text_batch_size,
+                device=DEVICE,
+            )
+            
+            print("\nRunning text benchmark for AWQ model...")
+            awq_text_stats = run_benchmark(
+                awq_model,
+                text_batches,
+                warmup_steps=args.warmup_steps,
+                measure_steps=args.measure_steps,
+                scenario_name="text_queries",
+            )
+            print_results("AWQ", awq_text_stats)
+            all_results["AWQ_text_queries"] = awq_text_stats
+            
+            del text_batches
+            gc.collect()
+            torch.cuda.empty_cache()
         
-        print("\nRunning text benchmark for AWQ model...")
-        awq_text_stats = run_benchmark(
-            awq_model,
-            text_batches,
-            warmup_steps=args.warmup_steps,
-            measure_steps=args.measure_steps,
-            scenario_name="text_queries",
-        )
-        print_results("AWQ", awq_text_stats)
-        all_results["AWQ_text_queries"] = awq_text_stats
-        
-        del text_batches
-        gc.collect()
-        torch.cuda.empty_cache()
-        
-        if not args.text_only:
+        if not args.text_only and not batch_sizes:
             print("Preparing image batches for AWQ model...")
             image_batches = prepare_image_batches(
                 awq_processor,
@@ -390,7 +509,10 @@ def main():
         torch.cuda.empty_cache()
     
     if not args.only_base and not args.only_awq:
-        print_summary(all_results)
+        if batch_sizes and base_sweep_results and awq_sweep_results:
+            print_sweep_summary(base_sweep_results, awq_sweep_results)
+        else:
+            print_summary(all_results)
     
     if args.output_json:
         meta = {
