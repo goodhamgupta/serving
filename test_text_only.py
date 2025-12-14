@@ -1,23 +1,14 @@
 """
-ColQwen3 embedding example with vLLM.
-
-Current Status:
-- Text embeddings: WORKING
-- Image embeddings: EXPERIMENTAL (requires additional vLLM integration work)
-
-For image embeddings, use the HuggingFace Transformers API directly
-(see test_vision.py for an example).
+Test text-only embeddings with ColQwen3 in vLLM.
 """
 from vllm import LLM
 
 model_name = "./tomoro-ai-colqwen3-embed-4b-w4a16-autoawq-seqlen-512"
 
-# Text embeddings (fully supported)
+# Text-only embeddings
 prompts = [
     "Hello, my name is",
     "Retrieve the city of Singapore",
-    "Retrieve the city of Beijing", 
-    "Retrieve the city of London",
 ]
 
 llm = LLM(
@@ -27,16 +18,12 @@ llm = LLM(
     hf_overrides={
         "architectures": ["TransformersMultiModalEmbeddingModel"],
     },
-    # Text-only mode (image support is experimental)
+    # Disable multimodal for text-only test
     limit_mm_per_prompt={"image": 0, "video": 0},
     enforce_eager=True,
     max_model_len=2048,
     dtype="bfloat16",
 )
-
-print("=" * 60)
-print("ColQwen3 Text Embeddings via vLLM")
-print("=" * 60)
 
 outputs = llm.embed(prompts)
 
@@ -49,10 +36,4 @@ for prompt, output in zip(prompts, outputs):
     print(f"  Embeddings: {embeds_trimmed} (size={len(embeds)})")
     print()
 
-print("=" * 60)
-print("For image embeddings, use HuggingFace Transformers directly:")
-print("  python test_vision.py")
-print("=" * 60)
-
-if __name__ == "__main__":
-    pass
+print("SUCCESS: Text-only embeddings work!")

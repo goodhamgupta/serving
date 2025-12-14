@@ -267,6 +267,34 @@ class ColQwen3(ColQwen3PreTrainedModel):
             attention_mask=attention_mask,
         )
 
+    def get_image_features(
+        self,
+        pixel_values: torch.Tensor,
+        image_grid_thw: Optional[torch.LongTensor] = None,
+        **kwargs,
+    ) -> torch.Tensor:
+        """
+        Extract image features from pixel values.
+        
+        This method is required for vLLM's TransformersMultiModalEmbeddingModel wrapper.
+        It processes images through the vision encoder and returns embeddings suitable
+        for the language model.
+        """
+        # Handle empty tensor case
+        if image_grid_thw is not None and image_grid_thw.numel() == 0:
+            image_grid_thw = None
+            
+        # Get visual features from the underlying VLM
+        # Qwen3VL.visual takes (pixel_values, grid_thw=...) and returns (hidden_states, deepstack_features)
+        visual_output = self.vlm.model.visual(
+            pixel_values,
+            grid_thw=image_grid_thw,
+        )
+        # Return just the main hidden states, not the deepstack features
+        if isinstance(visual_output, tuple):
+            return visual_output[0]
+        return visual_output
+
     def resize_token_embeddings(
         self,
         new_num_tokens: Optional[int] = None,
