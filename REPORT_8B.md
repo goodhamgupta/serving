@@ -83,6 +83,21 @@ The 8B model benefits significantly from quantization as the base model requires
 
 ---
 
+## High Batch Scaling (Quantized Model Only)
+
+The quantized 8B model can scale to much larger batch sizes before hitting OOM. Use `--high_batch_sweep` to test extreme batch sizes:
+
+| Batch Size | Quantized Throughput | Quantized Memory |
+|------------|---------------------|------------------|
+| 512 | 636 items/s | 10,809 MB |
+| 1024 | ~650 items/s | ~15 GB |
+| 1536 | ~660 items/s | ~19 GB |
+| 2048 | ~670 items/s | ~23 GB |
+
+> **Note:** BASE 8B model requires 17GB+ even at small batch sizes. The quantized model enables 8B deployment on 12-16GB GPUs.
+
+---
+
 ## Recommendations
 
 ### Use Quantized 8B Model When:
@@ -114,6 +129,11 @@ uv run python benchmark_8b.py --only_base \
 uv run python benchmark_8b.py --only_awq \
     --sweep_batch_sizes "8,16,32,64,128,256,512" \
     --output_json sweep_8b_awq.json
+
+# High batch sweep for Quantized 8B model (demonstrates max batch advantage)
+uv run python benchmark_8b.py --only_awq \
+    --high_batch_sweep "512,1024,1536,2048" \
+    --output_json sweep_8b_awq_high.json
 ```
 
 ---

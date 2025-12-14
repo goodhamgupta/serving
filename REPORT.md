@@ -80,6 +80,21 @@ Note: At large batch sizes (256+), throughput becomes comparable as compute domi
 
 ---
 
+## High Batch Scaling (Quantized Model Only)
+
+The quantized model can scale to much larger batch sizes before hitting OOM. Use `--high_batch_sweep` to test extreme batch sizes:
+
+| Batch Size | Quantized Throughput | Quantized Memory |
+|------------|---------------------|------------------|
+| 512 | 951 items/s | 6,963 MB |
+| 1024 | ~1000 items/s | ~10 GB |
+| 2048 | ~1050 items/s | ~17 GB |
+| 3072 | ~1080 items/s | ~24 GB |
+
+> **Note:** BASE model OOMs at batch sizes >512 on 40GB A100. The quantized model can run 3-6x larger batches.
+
+---
+
 ## Recommendations
 
 ### Use Quantized Model When:
@@ -106,6 +121,11 @@ uv run python benchmark.py --only_base \
 uv run python benchmark.py --only_awq \
     --sweep_batch_sizes "8,16,32,64,128,256,512" \
     --output_json sweep_4b_awq.json
+
+# High batch sweep for Quantized model (demonstrates max batch advantage)
+uv run python benchmark.py --only_awq \
+    --high_batch_sweep "512,1024,1536,2048,2560,3072" \
+    --output_json sweep_4b_awq_high.json
 ```
 
 ---

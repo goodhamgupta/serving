@@ -346,12 +346,18 @@ def main():
     parser.add_argument("--text_only", action="store_true", help="Only benchmark text (skip images)")
     parser.add_argument("--sweep_batch_sizes", type=str, default=None,
                         help="Comma-separated batch sizes to sweep, e.g. '4,8,16,32,64'")
+    parser.add_argument("--high_batch_sweep", type=str, default=None,
+                        help="High batch sizes for quantized model only, e.g. '512,1024,1536,2048,2560,3072'")
     parser.add_argument("--output_json", type=str, default=None, help="Path to save results as JSON")
     args = parser.parse_args()
     
     batch_sizes = None
     if args.sweep_batch_sizes:
         batch_sizes = [int(x.strip()) for x in args.sweep_batch_sizes.split(",")]
+    
+    high_batch_sizes = None
+    if args.high_batch_sweep:
+        high_batch_sizes = [int(x.strip()) for x in args.high_batch_sweep.split(",")]
     
     if not torch.cuda.is_available():
         raise RuntimeError("CUDA is required for this benchmark.")
@@ -454,7 +460,25 @@ def main():
             )
             for bs, stats in awq_sweep_results:
                 all_results[f"AWQ_text_queries_bs{bs}"] = stats
-        else:
+        
+        if high_batch_sizes:
+            print("\n" + "="*60)
+            print("HIGH BATCH SIZE SWEEP - QUANTIZED MODEL ONLY")
+            print("="*60)
+            high_batch_results = sweep_text_batch_sizes(
+                awq_model,
+                awq_processor,
+                batch_sizes=high_batch_sizes,
+                num_samples=args.text_samples,
+                warmup_steps=args.warmup_steps,
+                measure_steps=args.measure_steps,
+                scenario_prefix="QUANT_HIGH",
+            )
+            for bs, stats in high_batch_results:
+                all_results[f"AWQ_high_batch_bs{bs}"] = stats
+                awq_sweep_results.append((bs, stats))
+        
+        if not batch_sizes and not high_batch_sizes:
             print("\nPreparing text batches for AWQ model...")
             text_batches = prepare_text_batches(
                 awq_processor,
@@ -478,7 +502,7 @@ def main():
             gc.collect()
             torch.cuda.empty_cache()
         
-        if not args.text_only and not batch_sizes:
+        if not args.text_only and not batch_sizes and not high_batch_sizes:
             print("Preparing image batches for AWQ model...")
             image_batches = prepare_image_batches(
                 awq_processor,

@@ -64,6 +64,7 @@ uv run python benchmark_8b.py --only_awq --output_json awq_8b_results.json
 | `--only_awq` | - | Benchmark AWQ model only |
 | `--text_only` | - | Skip image benchmarks (text tower only) |
 | `--sweep_batch_sizes` | - | Comma-separated batch sizes to sweep |
+| `--high_batch_sweep` | - | High batch sizes for quantized model only (e.g. '512,1024,1536,2048') |
 | `--output_json` | - | Save results to JSON file |
 
 ### Batch Size Sweep
@@ -80,6 +81,11 @@ uv run python benchmark.py --only_base \
 uv run python benchmark.py --only_awq \
     --sweep_batch_sizes "8,16,32,64,128,256,512" \
     --output_json sweep_awq.json
+
+# High batch sweep for Quantized model only (demonstrates max batch advantage)
+uv run python benchmark.py --only_awq \
+    --high_batch_sweep "512,1024,1536,2048,2560,3072" \
+    --output_json sweep_awq_high.json
 ```
 
 ### Example with Custom Parameters
