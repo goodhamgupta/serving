@@ -1,13 +1,13 @@
-# ColQwen3 4B Embedding Model Benchmark Report
+# ColQwen3 8B Embedding Model Benchmark Report
 
 ## Overview
 
-This report compares the performance and memory consumption of the 4B ColQwen3 embedding model variants:
+This report compares the performance and memory consumption of the 8B ColQwen3 embedding model variants:
 
 | Model | Description | Model ID |
 |-------|-------------|----------|
-| **BASE** | Original BF16 model | `TomoroAI/tomoro-colqwen3-embed-4b` |
-| **Quantized** | AutoRound W4A16 | `shubhamg2208/tomoro-ai-colqwen3-embed-4b-w4a16-autoawq-seqlen-1024` |
+| **BASE** | Original BF16 model | `TomoroAI/tomoro-colqwen3-embed-8b` |
+| **Quantized** | AutoRound W4A16 | `shubhamg2208/tomoro-ai-colqwen3-embed-8b-w4a16-autoawq-seqlen-1024` |
 
 ## Important Notes
 
@@ -37,15 +37,15 @@ This report compares the performance and memory consumption of the 4B ColQwen3 e
 
 | Metric | BASE | Quantized | Reduction |
 |--------|------|-----------|-----------|
-| **Peak Memory (MB)** | 8,527 | 3,458 | **-59.4%** |
-| **Allocated Memory (MB)** | 8,496 | 3,382 | **-60.2%** |
+| **Peak Memory (MB)** | 16,791 | 6,998 | **-58.3%** |
+| **Allocated Memory (MB)** | 16,754 | 6,962 | **-58.4%** |
 
 ### Throughput
 
 | Metric | BASE | Quantized | Note |
 |--------|------|-----------|------|
-| **Throughput (items/s)** | 194.4 | 111.0 | *Fallback backend - see note above* |
-| **Latency (ms/batch)** | 41.15 | 72.06 | *Fallback backend - see note above* |
+| **Throughput (items/s)** | 182.6 | 105.9 | *Fallback backend - see note above* |
+| **Latency (ms/batch)** | 43.82 | 75.58 | *Fallback backend - see note above* |
 
 ---
 
@@ -56,22 +56,22 @@ This report compares the performance and memory consumption of the 4B ColQwen3 e
 | Metric | BASE | Quantized |
 |--------|------|-----------|
 | Total Items | 80 | 80 |
-| Total Time (s) | 0.412 | 0.721 |
-| Throughput (items/s) | 194.4 | 111.0 |
-| Mean Latency (ms/batch) | 41.15 | 72.06 |
-| Std Latency (ms/batch) | 3.45 | 3.62 |
-| CUDA Allocated (MB) | 8,496 | 3,382 |
-| CUDA Peak Allocated (MB) | 8,527 | 3,458 |
-| CUDA Peak Reserved (MB) | 8,544 | 4,046 |
+| Total Time (s) | 0.438 | 0.756 |
+| Throughput (items/s) | 182.6 | 105.9 |
+| Mean Latency (ms/batch) | 43.82 | 75.58 |
+| Std Latency (ms/batch) | 5.26 | 2.27 |
+| CUDA Allocated (MB) | 16,754 | 6,962 |
+| CUDA Peak Allocated (MB) | 16,791 | 6,998 |
+| CUDA Peak Reserved (MB) | 16,818 | 7,304 |
 
 ---
 
 ## Key Findings
 
 ### 1. Memory Efficiency ✅
-The quantized model achieves **~60% memory reduction**:
-- Peak memory: 8,527 MB → 3,458 MB
-- This enables deployment on GPUs with 4-8GB VRAM
+The quantized 8B model achieves **~58% memory reduction**:
+- Peak memory: 16,791 MB → 6,998 MB
+- This enables deployment on GPUs with 8-16GB VRAM instead of requiring 24GB+
 
 ### 2. Throughput (Backend Dependent) ⚠️
 Current results show slower throughput due to missing optimized backend.
@@ -88,12 +88,23 @@ With the proper backend, W4A16 quantization typically provides:
 
 ---
 
+## Comparison with 4B Models
+
+| Model | BASE Memory | Quantized Memory | Memory Reduction |
+|-------|-------------|------------------|------------------|
+| **4B** | ~8.5 GB | ~3.5 GB | ~59% |
+| **8B** | ~16.8 GB | ~7.0 GB | ~58% |
+
+Both model sizes show consistent memory reduction from quantization.
+
+---
+
 ## Recommendations
 
-1. **Use Quantized model when**:
-   - GPU memory is limited (4-8GB GPUs)
-   - Deploying on consumer hardware
-   - Memory reduction is the priority
+1. **Use Quantized 8B model when**:
+   - GPU memory is limited (8-16GB GPUs)
+   - Running on consumer hardware (RTX 3090, 4090)
+   - Need larger model capacity with memory constraints
 
 2. **Install optimized backend** for production:
    ```bash
@@ -105,13 +116,13 @@ With the proper backend, W4A16 quantization typically provides:
 ## Reproducibility
 
 ```bash
-# Benchmark BASE model (text only)
-uv run python benchmark.py --only_base --text_only --text_samples 32 \
-    --text_batch_size 8 --output_json base_results.json
+# Benchmark BASE 8B model (text only)
+uv run python benchmark_8b.py --only_base --text_only --text_samples 32 \
+    --text_batch_size 8 --output_json base_8b_results.json
 
-# Benchmark Quantized model (text only)
-uv run python benchmark.py --only_awq --text_only --text_samples 32 \
-    --text_batch_size 8 --output_json awq_results.json
+# Benchmark Quantized 8B model (text only)
+uv run python benchmark_8b.py --only_awq --text_only --text_samples 32 \
+    --text_batch_size 8 --output_json awq_8b_results.json
 ```
 
 ---

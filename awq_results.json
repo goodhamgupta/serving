@@ -1,0 +1,27 @@
+{
+  "metadata": {
+    "device": "cuda",
+    "gpu": "NVIDIA A100-SXM4-40GB",
+    "cuda_version": "12.8",
+    "text_samples": 32,
+    "text_batch_size": 8,
+    "image_samples": 16,
+    "image_batch_size": 4,
+    "image_size": 512,
+    "warmup_steps": 3,
+    "measure_steps": 10
+  },
+  "results": {
+    "AWQ_text_queries": {
+      "scenario": "text_queries",
+      "total_items": 80,
+      "total_time_s": 0.7206406379991677,
+      "throughput_items_per_s": 111.01233511076626,
+      "latency_mean_ms_per_batch": 72.06406379991677,
+      "latency_std_ms_per_batch": 3.6179649341621287,
+      "cuda_memory_allocated_MB": 3381.50146484375,
+      "cuda_max_memory_allocated_MB": 3458.30810546875,
+      "cuda_max_memory_reserved_MB": 4046.0
+    }
+  }
+}
