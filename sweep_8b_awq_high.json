@@ -1,0 +1,60 @@
+{
+  "metadata": {
+    "device": "cuda",
+    "gpu": "NVIDIA A100-SXM4-40GB",
+    "cuda_version": "12.8",
+    "text_samples": 64,
+    "text_batch_size": 8,
+    "image_samples": 16,
+    "image_batch_size": 4,
+    "image_size": 512,
+    "warmup_steps": 3,
+    "measure_steps": 10
+  },
+  "results": {
+    "AWQ_high_batch_bs512": {
+      "scenario": "text_queries_bs512",
+      "total_items": 5120,
+      "total_time_s": 8.068428120954195,
+      "throughput_items_per_s": 634.5721772873022,
+      "latency_mean_ms_per_batch": 806.8428120954195,
+      "latency_std_ms_per_batch": 16.03099025894096,
+      "cuda_memory_allocated_MB": 8393.0810546875,
+      "cuda_max_memory_allocated_MB": 10813.22998046875,
+      "cuda_max_memory_reserved_MB": 11690.0
+    },
+    "AWQ_high_batch_bs1024": {
+      "scenario": "text_queries_bs1024",
+      "total_items": 10240,
+      "total_time_s": 16.08804960301495,
+      "throughput_items_per_s": 636.4972916344683,
+      "latency_mean_ms_per_batch": 1608.8049603014952,
+      "latency_std_ms_per_batch": 19.790262915559005,
+      "cuda_memory_allocated_MB": 9845.9052734375,
+      "cuda_max_memory_allocated_MB": 14817.06201171875,
+      "cuda_max_memory_reserved_MB": 15744.0
+    },
+    "AWQ_high_batch_bs1536": {
+      "scenario": "text_queries_bs1536",
+      "total_items": 15360,
+      "total_time_s": 24.034239793982124,
+      "throughput_items_per_s": 639.088239597491,
+      "latency_mean_ms_per_batch": 2403.4239793982124,
+      "latency_std_ms_per_batch": 28.699375540879064,
+      "cuda_memory_allocated_MB": 11298.7216796875,
+      "cuda_max_memory_allocated_MB": 18755.16748046875,
+      "cuda_max_memory_reserved_MB": 20226.0
+    },
+    "AWQ_high_batch_bs2048": {
+      "scenario": "text_queries_bs2048",
+      "total_items": 20480,
+      "total_time_s": 32.0155349529814,
+      "throughput_items_per_s": 639.6894517014101,
+      "latency_mean_ms_per_batch": 3201.5534952981398,
+      "latency_std_ms_per_batch": 37.813216666431146,
+      "cuda_memory_allocated_MB": 12751.5380859375,
+      "cuda_max_memory_allocated_MB": 22692.63232421875,
+      "cuda_max_memory_reserved_MB": 25504.0
+    }
+  }
+}

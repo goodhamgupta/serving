@@ -33,13 +33,13 @@ The 8B quantized model uses **~58% less memory**, enabling deployment on GPUs th
 
 | Batch Size | BASE Throughput | BASE Memory | Quant Throughput | Quant Memory |
 |------------|-----------------|-------------|------------------|--------------|
-| 8 | 201 items/s | 16,791 MB | 106 items/s | 6,998 MB |
-| 16 | 380 items/s | 16,845 MB | 127 items/s | 7,052 MB |
-| 32 | 563 items/s | 16,964 MB | 134 items/s | 7,165 MB |
-| 64 | 611 items/s | 17,196 MB | 538 items/s | 7,472 MB |
-| 128 | 625 items/s | 17,683 MB | 541 items/s | 7,926 MB |
-| 256 | 636 items/s | 18,605 MB | 635 items/s | 8,813 MB |
-| 512 | - | - | 636 items/s | 10,809 MB |
+| 8 | 208 items/s | 16,790 MB | 106 items/s | 6,997 MB |
+| 16 | 403 items/s | 16,844 MB | 127 items/s | 7,051 MB |
+| 32 | 573 items/s | 16,964 MB | 134 items/s | 7,164 MB |
+| 64 | 607 items/s | 17,197 MB | 538 items/s | 7,471 MB |
+| 128 | 625 items/s | 17,683 MB | 596 items/s | 7,925 MB |
+| 256 | 635 items/s | 18,604 MB | 635 items/s | 8,812 MB |
+| 512 | - | OOM | 632 items/s | 10,810 MB |
 
 ### Memory-Constrained Scenarios
 
@@ -48,7 +48,7 @@ The 8B quantized model uses **~58% less memory**, enabling deployment on GPUs th
 | Model | Fits? | Max Batch Size | Throughput |
 |-------|-------|----------------|------------|
 | BASE | ❌ No | - | Cannot run |
-| **Quantized** | ✅ Yes | **128** | **541 items/s** |
+| **Quantized** | ✅ Yes | **128** | **596 items/s** |
 
 **Result: Quantized model enables 8B model deployment on 12GB GPUs**
 
@@ -57,7 +57,7 @@ The 8B quantized model uses **~58% less memory**, enabling deployment on GPUs th
 | Model | Fits? | Max Batch Size | Throughput |
 |-------|-------|----------------|------------|
 | BASE | ❌ No | - | Cannot run |
-| **Quantized** | ✅ Yes | **512** | **636 items/s** |
+| **Quantized** | ✅ Yes | **512** | **632 items/s** |
 
 **Result: Quantized model enables high-throughput 8B inference on 16GB GPUs**
 
@@ -65,10 +65,10 @@ The 8B quantized model uses **~58% less memory**, enabling deployment on GPUs th
 
 | Model | Max Batch Size | Throughput | Peak Memory |
 |-------|----------------|------------|-------------|
-| BASE | ~64 | 611 items/s | 17,196 MB |
-| **Quantized** | **512** | **636 items/s** | 10,809 MB |
+| BASE | ~64 | 607 items/s | 17,197 MB |
+| **Quantized** | **1024** | **637 items/s** | 14,817 MB |
 
-**Result: Quantized model achieves 4% higher throughput with 8x larger batches**
+**Result: Quantized model achieves 5% higher throughput with 16x larger batches**
 
 ---
 
@@ -85,14 +85,14 @@ The 8B model benefits significantly from quantization as the base model requires
 
 ## High Batch Scaling (Quantized Model Only)
 
-The quantized 8B model can scale to much larger batch sizes before hitting OOM. Use `--high_batch_sweep` to test extreme batch sizes:
+The quantized 8B model can scale to much larger batch sizes before hitting OOM:
 
 | Batch Size | Quantized Throughput | Quantized Memory |
 |------------|---------------------|------------------|
-| 512 | 636 items/s | 10,809 MB |
-| 1024 | ~650 items/s | ~15 GB |
-| 1536 | ~660 items/s | ~19 GB |
-| 2048 | ~670 items/s | ~23 GB |
+| 512 | 635 items/s | 10,813 MB |
+| 1024 | 637 items/s | 14,817 MB |
+| 1536 | 639 items/s | 18,755 MB |
+| 2048 | 640 items/s | 22,693 MB |
 
 > **Note:** BASE 8B model requires 17GB+ even at small batch sizes. The quantized model enables 8B deployment on 12-16GB GPUs.
 
@@ -121,17 +121,17 @@ The quantized 8B model can scale to much larger batch sizes before hitting OOM. 
 
 ```bash
 # Sweep batch sizes for BASE 8B model
-uv run python benchmark_8b.py --only_base \
+uv run python benchmark_8b.py --only_base --text_only \
     --sweep_batch_sizes "8,16,32,64,128,256" \
     --output_json sweep_8b_base.json
 
 # Sweep batch sizes for Quantized 8B model
-uv run python benchmark_8b.py --only_awq \
+uv run python benchmark_8b.py --only_awq --text_only \
     --sweep_batch_sizes "8,16,32,64,128,256,512" \
     --output_json sweep_8b_awq.json
 
 # High batch sweep for Quantized 8B model (demonstrates max batch advantage)
-uv run python benchmark_8b.py --only_awq \
+uv run python benchmark_8b.py --only_awq --text_only \
     --high_batch_sweep "512,1024,1536,2048" \
     --output_json sweep_8b_awq_high.json
 ```

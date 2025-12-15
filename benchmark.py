@@ -189,7 +189,7 @@ def load_base_model(processor_max_tokens: int = 1280):
     model = AutoModel.from_pretrained(
         BASE_MODEL_ID,
         torch_dtype=DTYPE,
-        attn_implementation="sdpa",
+        attn_implementation="flash_attention_2",
         trust_remote_code=True,
         device_map=DEVICE,
     ).eval()
